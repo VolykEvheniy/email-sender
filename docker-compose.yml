@@ -8,20 +8,29 @@ services:
       - '2181:2181'
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - app-network
 
   kafka:
     image: 'bitnami/kafka:latest'
     container_name: kafka
     ports:
       - '9092:9092'
+      - '9093:9093'
     environment:
       - KAFKA_BROKER_ID=1
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,EXTERNAL_LISTENER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL_LISTENER://localhost:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,EXTERNAL_LISTENER:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
     depends_on:
       - zookeeper
+    networks:
+      app-network:
+        aliases:
+          - kafka
 
   elasticsearch:
     image: elasticsearch:8.6.1
@@ -34,6 +43,8 @@ services:
       - ./data:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
+    networks:
+      - app-network
 
   kibana:
     image: kibana:8.6.1
@@ -42,16 +53,31 @@ services:
       - "5601:5601"
     depends_on:
       - elasticsearch
+    networks:
+      - app-network
 
-  email-service:
+  email-sender:
     build: .
-    container_name: email-service
+    container_name: email-sender
+    restart: on-failure
     ports:
       - "8081:8081"
+    env_file:
+      - .env
     environment:
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - SPRING_DATA_ELASTICSEARCH_CLUSTER_NODES=elasticsearch:9200
-      - SERVER_PORT=8081
+        - SERVER_PORT=8081
+        - KAFKA_TOPIC_MESSAGERECEIVED=messageReceived
+        - SPRING_KAFKA_CONSUMER_GROUP_ID=email-sender
+        - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+        - ELASTICSEARCH_ADDRESS=elasticsearch:9200
     depends_on:
-      - kafka
-      - elasticsearch
+      elasticsearch:
+        condition: service_started
+      kafka:
+        condition: service_started
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

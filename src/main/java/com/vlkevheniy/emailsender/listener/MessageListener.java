@@ -1,7 +1,7 @@
 package com.vlkevheniy.emailsender.listener;
 
 
-import com.vlkevheniy.emailsender.dto.MessageDto;
+import com.vlkevheniy.common.dto.MessageDto;
 import com.vlkevheniy.emailsender.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;

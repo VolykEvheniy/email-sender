@@ -2,7 +2,7 @@ package com.vlkevheniy.emailsender.service;
 
 import com.vlkevheniy.emailsender.model.MessageData;
 import com.vlkevheniy.emailsender.model.MessageStatus;
-import com.vlkevheniy.emailsender.dto.MessageDto;
+import com.vlkevheniy.common.dto.MessageDto;
 import com.vlkevheniy.emailsender.exception.EmailSendingException;
 import com.vlkevheniy.emailsender.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class MessageServiceImpl implements MessageService{
         MessageData messageData = new MessageData();
         messageData.setTo(messageDto.getTo());
         messageData.setSubject(messageDto.getSubject());
-        messageData.setContent(messageData.getContent());
+        messageData.setContent(messageDto.getContent());
         messageData.setStatus(MessageStatus.FAILED);
         messageData.setAttemptCount(0);
         messageData.setLastUpdateTime(Instant.now());

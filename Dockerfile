@@ -1,9 +1,11 @@
-FROM openjdk:17-jdk-slim
-
+FROM maven as build
 WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-COPY target/email-service-0.0.1-SNAPSHOT.jar email-service.jar
-
+FROM openjdk:17-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8081
-
-ENTRYPOINT ["java", "-jar", "email-service.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
